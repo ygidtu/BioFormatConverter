@@ -6,12 +6,12 @@ gff3 to gtf format
 import argparse
 import os
 import sys
-import traceback
 
 from tqdm import tqdm
 
 __author__ = "Zhang Yiming"
-__version__ = 20180927
+__version__ = "0.1.1"
+__since__ = 20180927
 
 
 class Gff2Gtf(object):
@@ -100,8 +100,8 @@ class Gff2Gtf(object):
 
         for k, v in data.items():
             if k not in ("ID", "Name", "Parent"):
-                res.append("%s=\"%s\"" % (k, v))
-        return ";".join(res)
+                res.append("%s \"%s\"" % (k, v))
+        return "; ".join(res)
 
     def convert(self):
         u"""
@@ -117,6 +117,7 @@ class Gff2Gtf(object):
                     lines = line.rstrip().split("\t")
                     info = self.split_gff_detail(lines[-1])
 
+                    # first class. eg: gene
                     if "ID" in info.keys() and \
                         "Parent" not in info.keys() and \
                             "gene" in lines[2]:
@@ -132,6 +133,8 @@ class Gff2Gtf(object):
                     elif "Parent" in info.keys():
 
                         if "ID" in info.keys():
+
+                            # second class. eg: transcripts
                             if info["Parent"] in self.genes.keys():
                                 info["gene_id"] = info["Parent"]
                                 info["gene_name"] = self.genes[
@@ -148,6 +151,11 @@ class Gff2Gtf(object):
                                     info["transcript_name"],
                                     info["gene_id"]
                                 ]
+
+                                info["transcript_type"] = lines[2]
+                                lines[2] = "transcript"
+
+                            # third class. eg: exons
                             else:
 
                                 if "transcript_id" not in info.keys():
@@ -179,8 +187,9 @@ class Gff2Gtf(object):
                                         "Name" in info.keys():
                                     info[ele_name] = info.pop("Name")
 
+                        # others just convert and output
                         else:
-                            continue
+                            pass
 
                     lines[-1] = self.concat_dict_to_string(info)
 
