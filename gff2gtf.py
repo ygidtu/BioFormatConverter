@@ -5,6 +5,7 @@ gff3 to gtf format
 """
 import argparse
 import os
+import re
 import sys
 
 from tqdm import tqdm
@@ -132,7 +133,7 @@ class Gff2Gtf(object):
 
                     elif "Parent" in info.keys():
 
-                        if "ID" in info.keys():
+                        if "ID" in info.keys() and re.search(r".*(transcript|rna).*", lines[2], re.I):
 
                             # second class. eg: transcripts
                             if info["Parent"] in self.genes.keys():
