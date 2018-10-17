@@ -100,7 +100,7 @@ class Gff2Gtf(object):
         res = []
 
         for k, v in data.items():
-            if k not in ("ID", "Name", "Parent"):
+            if "id" in k or "name" in k:
                 res.append("%s \"%s\"" % (k, v))
         return "; ".join(res)
 
@@ -146,7 +146,8 @@ class Gff2Gtf(object):
                                     info["transcript_id"] = info["ID"]
 
                                 if "transcript_name" not in info.keys():
-                                    info["transcript_name"] = info["Name"]
+                                    info["transcript_name"] = info["Name"] if "Name" in info.keys(
+                                    ) else "NA"
 
                                 self.transcripts[info["transcript_id"]] = [
                                     info["transcript_name"],
@@ -194,7 +195,8 @@ class Gff2Gtf(object):
 
                     lines[-1] = self.concat_dict_to_string(info)
 
-                    w.write("\t".join(lines) + "\n")
+                    if lines[2] in ("gene", "transcript", "exon"):
+                        w.write("\t".join(lines) + "\n")
 
 
 if __name__ == '__main__':
