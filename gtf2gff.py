@@ -20,8 +20,10 @@ class Gtf2Gff(object):
         init this class
         """
         args = self.argument_parser()
+        print(args)
         self.input = os.path.abspath(args.input)
         self.output = os.path.abspath(args.output)
+        self.generate_genes = args.gene
         self.check_dir()
 
         self.genes = {}
@@ -65,6 +67,17 @@ class Gtf2Gff(object):
             required=True
         )
 
+        parser.add_argument(
+            "-g",
+            "--gene",
+            action="store_true",
+            default=False,
+            help="""
+            Create genes auto, cause some of the gtf doesn't contains genes.
+            But downstream programs needs it, such as MISO.
+            """
+        )
+
         if len(sys.argv[1:]) <= 0:
             parser.print_help()
             exit(0)
@@ -92,7 +105,7 @@ class Gtf2Gff(object):
         return data
 
     @staticmethod
-    def __get_value_from_data__(data, target):
+    def __get_value_from_data__(data, target, pop=True):
         u"""
         从gtf的详细列中构建出的字典，从其中提取出所需要的数据
         但是由于有多个可能性，比如：gene_id, geneID, ID等等，不同的标准下的gtf文件，太烦人了
@@ -104,7 +117,7 @@ class Gtf2Gff(object):
         ids = [target, target.replace("_", ""), target.split("_")[-1]]
         for i in ids:
             if i in data.keys():
-                return data.pop(i)
+                return data.pop(i) if pop else data[i]
         return "NA"
 
     def __format_gff_details__(self, data, label):
@@ -159,6 +172,7 @@ class Gtf2Gff(object):
         进行转化
         :return:
         """
+        genes = set()
         with open(self.output, "w+") as w:
             with open(self.input) as r:
                 for line in r:
@@ -167,6 +181,20 @@ class Gtf2Gff(object):
 
                     lines = line.split("\t")
                     data = self.__split_gtf_details__(lines[8])
+
+                    if self.generate_genes:
+                        if lines[2] == "gene":
+                            genes.add(self.__get_value_from_data__(data, "gene_id", False))
+
+                        if lines[2] == "transcript":
+                            parent = self.__get_value_from_data__(data, "gene_id", False)
+
+                            if parent not in genes:
+                                new_line = lines[:8] + ["ID=%s" % parent]
+                                new_line[2] = "gene"
+                                genes.add(parent)
+                                w.write("\t".join(new_line) + "\n")
+
                     lines[8] = self.__format_gff_details__(data, lines[2])
 
                     w.write("\t".join(lines) + "\n")
