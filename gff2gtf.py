@@ -46,7 +46,8 @@ class Gff2Gtf(object):
         if not os.path.exists(outdir):
             os.makedirs(outdir)
 
-    def argument_parser(self):
+    @staticmethod
+    def argument_parser():
         u"""
         argument_parser
         """
