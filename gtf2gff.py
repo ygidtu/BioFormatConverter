@@ -174,6 +174,7 @@ class Gtf2Gff(object):
         """
         genes = set()
         with open(self.output, "w+") as w:
+            w.write("#gff-version 3\n")
             with open(self.input) as r:
                 for line in r:
                     if line.startswith("#"):
@@ -188,9 +189,12 @@ class Gtf2Gff(object):
 
                         if lines[2] == "transcript":
                             parent = self.__get_value_from_data__(data, "gene_id", False)
+                            parent_name = self.__get_value_from_data__(data, "gene_name", False)
 
+                            if parent_name == "NA":
+                                parent_name = parent
                             if parent not in genes:
-                                new_line = lines[:8] + ["ID=%s" % parent]
+                                new_line = lines[:8] + ["ID=%s;Name=%s" % (parent, parent_name)]
                                 new_line[2] = "gene"
                                 genes.add(parent)
                                 w.write("\t".join(new_line) + "\n")

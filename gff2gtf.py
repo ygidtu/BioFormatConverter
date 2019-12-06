@@ -110,6 +110,7 @@ class Gff2Gtf(object):
         start to converting
         """
         with open(self.output, "w+") as w:
+            w.write("#gtf-version")
             with open(self.input) as r:
                 for line in tqdm(r):
                     if line.startswith("#"):
@@ -134,65 +135,62 @@ class Gff2Gtf(object):
 
                     elif "Parent" in info.keys():
 
-                        if "ID" in info.keys() and re.search(r".*(transcript|rna).*", lines[2], re.I):
+                        # second class. eg: transcripts
+                        if info["Parent"] in self.genes.keys():
+                            info["gene_id"] = info["Parent"]
+                            info["gene_name"] = self.genes[
+                                info["Parent"]
+                            ]
 
-                            # second class. eg: transcripts
-                            if info["Parent"] in self.genes.keys():
-                                info["gene_id"] = info["Parent"]
-                                info["gene_name"] = self.genes[
-                                    info["Parent"]
-                                ]
+                            if "transcript_id" not in info.keys():
+                                info["transcript_id"] = info["ID"]
 
-                                if "transcript_id" not in info.keys():
-                                    info["transcript_id"] = info["ID"]
+                            if "transcript_name" not in info.keys():
+                                info["transcript_name"] = info["Name"] if "Name" in info.keys(
+                                ) else "NA"
 
-                                if "transcript_name" not in info.keys():
-                                    info["transcript_name"] = info["Name"] if "Name" in info.keys(
-                                    ) else "NA"
+                            self.transcripts[info["transcript_id"]] = [
+                                info["transcript_name"],
+                                info["gene_id"]
+                            ]
 
-                                self.transcripts[info["transcript_id"]] = [
-                                    info["transcript_name"],
-                                    info["gene_id"]
-                                ]
+                            info["transcript_type"] = lines[2]
+                            lines[2] = "transcript"
 
-                                info["transcript_type"] = lines[2]
-                                lines[2] = "transcript"
-
-                            # third class. eg: exons
-                            else:
-
-                                if "transcript_id" not in info.keys():
-                                    info["transcript_id"] = info["Parent"]
-
-                                transcript = self.transcripts[
-                                    info["Parent"]
-                                ]
-
-                                if "transcript_name" not in info.keys():
-                                    info["transcript_name"] = transcript[0]
-
-                                if "gene_id" not in info.keys():
-                                    info["gene_id"] = transcript[1]
-
-                                if "gene_name" not in info.keys():
-                                    info["gene_name"] = self.genes[
-                                        transcript[1]
-                                    ]
-
-                                ele_id = "%s_id" % lines[2].lower()
-                                ele_name = "%s_name" % lines[2].lower()
-
-                                if ele_id not in info.keys() and \
-                                        "ID" in info.keys():
-                                    info[ele_id] = info.pop("ID")
-
-                                if ele_name not in info.keys() and \
-                                        "Name" in info.keys():
-                                    info[ele_name] = info.pop("Name")
-
-                        # others just convert and output
+                        # third class. eg: exons
                         else:
-                            pass
+                            if "transcript_id" not in info.keys():
+                                info["transcript_id"] = info["Parent"]
+
+                            transcript = self.transcripts[
+                                info["Parent"]
+                            ]
+
+                            if "transcript_name" not in info.keys():
+                                info["transcript_name"] = transcript[0]
+
+                            if "gene_id" not in info.keys():
+                                info["gene_id"] = transcript[1]
+
+                            if "gene_name" not in info.keys():
+                                info["gene_name"] = self.genes[
+                                    transcript[1]
+                                ]
+
+                            ele_id = "%s_id" % lines[2].lower()
+                            ele_name = "%s_name" % lines[2].lower()
+
+                            if ele_id not in info.keys() and \
+                                    "ID" in info.keys():
+                                info[ele_id] = info.pop("ID")
+
+                            if ele_name not in info.keys() and \
+                                    "Name" in info.keys():
+                                info[ele_name] = info.pop("Name")
+
+                    # others just convert and output
+                    else:
+                        pass
 
                     lines[-1] = self.concat_dict_to_string(info)
 
