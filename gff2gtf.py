@@ -155,7 +155,9 @@ class Gff2Gtf(object):
                             ]
 
                             info["transcript_type"] = lines[2]
-                            lines[2] = "transcript"
+
+                            if lines[2] != "CDS":
+                                lines[2] = "transcript"
 
                         # third class. eg: exons
                         else:
@@ -194,7 +196,7 @@ class Gff2Gtf(object):
 
                     lines[-1] = self.concat_dict_to_string(info)
 
-                    if lines[2] in ("gene", "transcript", "exon"):
+                    if lines[2] in ("gene", "transcript", "exon", "CDS"):
                         w.write("\t".join(lines) + "\n")
 
 
